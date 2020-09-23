@@ -62,31 +62,59 @@ def Init():
 #   [Required] Execute Data / Process messages
 #---------------------------
 def Execute(data):
-    response = 'error'
+    response = "Error, try '!bank help' for more information"
+
     # bankaccount command called
     if (data.IsChatMessage() and data.GetParam(0).lower() == ba_config.CommandMain):
-        userPoints = Parent.GetPoints(data.User)
+        userPoints = int(Parent.GetPoints(data.User))
         userAccountbalance = GetBalance(data.User)
+        
+        bankCommand = data.GetParam(1).lower()
         pointsAmount = data.GetParam(2)
 
-        if (data.GetParam(1).lower() == ba_config.CommandHelp):
-            response = "This is your bank account. You can use '!bank deposit <amount>' to transfer rialPoints to your bank account and '!bank withdraw <amount>' to transfer it to your wallet for gambling and other stuff. See also: '!bank top10richest' and '!bank top10richestalltime'"
+        if (bankCommand == ba_config.CommandHelp):
+            Parent.SendStreamMessage(ba_config.ResponseHelp)
+            return
 
-        if (data.GetParam(1).lower() == ba_config.CommandDeposit):
-            if (pointsAmount.isdigit() and pointsAmount > 0):
+        if (bankCommand == ba_config.CommandBalance):
+            Log(GetBalance(data.User))
+            if ("error" != GetBalance(data.User)):
+                response = "Your current bank account balance: " + miscLib.FormatThousandsSeparator(GetBalance(data.User)) + " " + ba_config.CurrencyName
+            else:
+                response = "Error: you don't have a bank account yet!"
+
+            Parent.SendStreamMessage(response)
+            return
+
+        if (bankCommand == ba_config.CommandTop10Richest):
+            Parent.SendStreamMessage(ba_config.ResponseTop10Richest + GetTop10RichestWithData(False))
+            return    
+
+        if (bankCommand == ba_config.CommandTop10RichestAllTime):
+            Parent.SendStreamMessage(ba_config.ResponseTop10Richest + GetTop10RichestWithData(True))
+            return
+
+        if (not pointsAmount.isdigit()):
+            Parent.SendStreamMessage("Error: Only numbers you silly!")
+            return
+
+        if (bankCommand == ba_config.CommandDeposit):
+            if (pointsAmount > 0):
                 # check if user has enough points to deposit
-                if (userPoints >= pointsAmount):
-                    response = "deposit ok:" + pointsAmount + "current points: " + str(userPoints)
+                if (int(userPoints) >= int(pointsAmount)):
+                    UpdateDatafile(bankCommand, data)
+                    response = "Successfully deposited " + pointsAmount + " " + ba_config.CurrencyName + "! | Current cash: " + miscLib.FormatThousandsSeparator(Parent.GetPoints(data.User)) + " " + ba_config.CurrencyName + " | Current balance: " + miscLib.FormatThousandsSeparator(GetBalance(data.User)) + " " + ba_config.CurrencyName
                 else:
-                    response = "not enough points to deposit"
+                    response = "Error: not enough cash to deposit " + miscLib.FormatThousandsSeparator(pointsAmount) + " " + ba_config.CurrencyName + "! | Current cash: " + str(userPoints)
 
-        if (data.GetParam(1).lower() == ba_config.CommandWithdraw):
-            if (data.GetParam(2).isdigit() and pointsAmount > 0):
+        if (bankCommand == ba_config.CommandWithdraw):
+            if (int(pointsAmount) > 0):
                 # check if user has enough account balance for withdrawal
-                if (userAccountbalance >= pointsAmount):
-                    response = "withdrawal ok:" + pointsAmount + "current points: " + str(userPoints) + "current balance: " + str(userAccountbalance)
+                if (userAccountbalance >= int(pointsAmount)):
+                    UpdateDatafile(bankCommand, data)
+                    response = "Successfully withdrawn " + miscLib.FormatThousandsSeparator(pointsAmount) + " " + ba_config.CurrencyName + "! | Current cash: " + miscLib.FormatThousandsSeparator(Parent.GetPoints(data.User)) + " " + ba_config.CurrencyName + " | Current balance: " + miscLib.FormatThousandsSeparator(GetBalance(data.User)) + " " + ba_config.CurrencyName
                 else:
-                    response = "not enough account balance for withdrawal"
+                    response = "Insufficient account balance for withdrawal of " + miscLib.FormatThousandsSeparator(pointsAmount) + " " + ba_config.CurrencyName + "! | Current balance: " + miscLib.FormatThousandsSeparator(userAccountbalance) + " " + ba_config.CurrencyName
 
         Parent.SendStreamMessage(response) # Send your message to chat
 
@@ -149,40 +177,52 @@ def Log(message):
 #---------------------------
 def UpdateDatafile(command, data):
     currentday = miscLib.GetCurrentDayFormattedDate()
-    response = "error"
+    success = False
 
-    userPoints = Parent.GetPoints(data.User)
-    userAccountbalance = GetBalance(data.User)
-    pointsAmount = data.GetParam(2)
+    userId = str(data.User)
+    userName = str(data.UserName.lower())
+    pointsAmount = int(data.GetParam(2))
 
     # this loads the data of file bankdata.json into variable "data"
     with open(ba_config.DataFilepath, 'r') as f:
         data = json.load(f)
 
-        # check if the given data.user exists in data. -> user doesnt exist yet, create array of the user data with current default values, which will be stored in bankdata.json
-        if (True == IsNewUser(data.User)):
-            data[str(data.user.lower())] = {}
+        # check if the given data.user exists in data. -> user doesnt exist yet, create array of the default user data, which will be stored in bankdata.json
+        if (True == IsNewUser(userName)):
+            data[userName] = {}
+            data[userName][ba_config.JSONVariablesBalance] = 0
+            data[userName][ba_config.JSONVariablesLatestDeposit] = 0
+            data[userName][ba_config.JSONVariablesLatestDepositDate] = ""
+            data[userName][ba_config.JSONVariablesLatestWithdrawal] = 0
+            data[userName][ba_config.JSONVariablesLatestWithdrawalDate] = ""
+            data[userName][ba_config.JSONVariablesHighestBalance] = 0
+            data[userName][ba_config.JSONVariablesHighestBalanceDate] = ""
 
         if (command == ba_config.CommandDeposit):
-            data[str(data.user.lower())][ba_config.JSONVariablesBalance] += pointsAmount
-            data[str(data.user.lower())][ba_config.JSONVariablesLatestDeposit] = pointsAmount
-            data[str(data.user.lower())][ba_config.JSONVariablesLatestDepositDate] = miscLib.GetCurrentDayFormattedDate
+            data[userName][ba_config.JSONVariablesBalance] += pointsAmount
+            data[userName][ba_config.JSONVariablesLatestDeposit] = pointsAmount
+            data[userName][ba_config.JSONVariablesLatestDepositDate] = currentday
+            Parent.RemovePoints(userId,userName,pointsAmount)
+            success = True
             
             # if new balance is higher than old balance
-            if (data[str(data.user.lower())][ba_config.JSONVariablesHighestBalance] + userPoints > data[str(data.user.lower())][ba_config.JSONVariablesHighestBalance]):
-                data[str(data.user.lower())][ba_config.JSONVariablesHighestBalance] = data[str(data.user.lower())][ba_config.JSONVariablesHighestBalance] + userPoints
-                data[str(data.user.lower())][ba_config.JSONVariablesHighestBalanceDate] = ""
+            if (int(data[userName][ba_config.JSONVariablesBalance]) > int(data[userName][ba_config.JSONVariablesHighestBalance])):
+                data[userName][ba_config.JSONVariablesHighestBalance] = data[userName][ba_config.JSONVariablesBalance]
+                data[userName][ba_config.JSONVariablesHighestBalanceDate] = currentday
 
         if (command == ba_config.CommandWithdraw):
-            data[str(data.user.lower())][ba_config.JSONVariablesLatestWithdrawal] = 0
-            data[str(data.user.lower())][ba_config.JSONVariablesLatestWithdrawalDate] = miscLib.GetCurrentDayFormattedDate
-      
+            data[userName][ba_config.JSONVariablesBalance] -= pointsAmount
+            data[userName][ba_config.JSONVariablesLatestWithdrawal] = pointsAmount
+            data[userName][ba_config.JSONVariablesLatestWithdrawalDate] = currentday
+            Parent.AddPoints(userId,userName,pointsAmount)
+            success = True
+
     # after everything was modified and updated, we need to write the stuff from our "data" variable to the bankdata.json file 
     os.remove(ba_config.DataFilepath)
     with open(ba_config.DataFilepath, 'w') as f:
         json.dump(data, f, indent=4)
 
-    return response
+    return success
 
 #---------------------------
 #   returns the string formatted balance
@@ -193,9 +233,9 @@ def GetBalance(username):
         data = json.load(f)
 
         if str(username.lower()) not in data:
-            balanceResponse = "You don't have a bank account yet!"
+            balanceResponse = "error"
         else:
-            balanceResponse = str(data[str(username.lower())][ba_config.JSONVariablesBalance])
+            balanceResponse = data[username.lower()][ba_config.JSONVariablesBalance]
 
     return balanceResponse
 
@@ -278,9 +318,9 @@ def GetTop10RichestWithData(alltime):
             top10RichestWithData += " ("
             # different output, when alltime = True
             if (True == alltime):
-                top10RichestWithData += str(data[richestUser][ba_config.JSONVariablesHighestBalance]) + " at " + str(data[richestUser][ba_config.JSONVariablesHighestBalanceDate])
+                top10RichestWithData += miscLib.FormatThousandsSeparator(data[richestUser][ba_config.JSONVariablesHighestBalance]) + " " + ba_config.CurrencyName + " at " + str(data[richestUser][ba_config.JSONVariablesHighestBalanceDate])
             else:
-                top10RichestWithData += str(data[richestUser][ba_config.JSONVariablesBalance])
+                top10RichestWithData += miscLib.FormatThousandsSeparator(data[richestUser][ba_config.JSONVariablesBalance]) + " " + ba_config.CurrencyName
 
             top10RichestWithData += ")"
             

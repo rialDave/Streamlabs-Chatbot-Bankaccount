@@ -13,7 +13,7 @@ ScriptName = "🏦 Bankaccount"
 Website = "https://twitch.tv/rialDave/"
 Description = "A bank account functionality to 'deposit' chatbot currency to your bank account."
 Creator = "rialDave"
-Version = "0.1.0-dev"
+Version = "0.2.0-dev"
 
 #---------------------------
 #   Global Variables
@@ -25,11 +25,6 @@ DataFilepath = os.path.join(ROOT_DIR, DataFolder, DataFilename)
 DataBackupFolder = "archive" # inside data path
 DataBackupFilePrefix = "bankdata_bak-"
 DataBackupPath = os.path.join(ROOT_DIR, DataFolder, DataBackupFolder)
-
-VariableChannelName = "$channelName"
-VariableUser = "$user"
-ChannelId = "159000697"
-AppClientId = "znnnk0lduw7lsppls5v8kpo9zvfcvd"
 
 # Configuration of keys in json file
 JSONVariablesBalance = "balance"
@@ -44,16 +39,18 @@ JSONVariablesLatestWithdrawalDate = "latest_withdrawal_date"
 #   Command settings and responses (caution: some of the response texts are overwritten later / not refactored yet)
 #---------------------------
 
+CurrencyName = "ꝚꝒ"
+
 CommandMain = "!bank"
 CommandHelp = "help"
 CommandDeposit = "deposit"
 CommandWithdraw = "withdraw"
+CommandBalance = "balance"
 CommandTop10Richest = "top10richest"
 CommandTop10RichestAllTime = "top10richestalltime"
 
-ResponseDeposit = "Successfully transferred rialpoints to bank account: "
-ResponseWithdraw = "You've successfully transferred rialPoints to wallet: "
-ResponseTop10Richest = "Here are the top 10 richest persons of this stream:"
-ResponseTop10RichestAlltime = "Oh, the richest of all time? Alright, here are the top 10 richest persons of ALL-TIME:"
+ResponseHelp = "This is your bank account. You can use '!bank deposit <amount>' to transfer " + CurrencyName + " to your bank account and '!bank withdraw <amount>' to transfer it to your cash wallet for gambling and other stuff. '!bank balance' shows your current balance. See also: '!bank top10richest' and '!bank top10richestalltime'"
+ResponseTop10Richest = "Here are the top 10 richest persons of this stream: "
+ResponseTop10RichestAlltime = "Oh, the richest of all time? Alright, here are the top 10 richest persons of ALL-TIME: "
 
 ResponsePermissionDeniedMod = "Permission denied: You have to be a Moderator to use this command!"

@@ -17,3 +17,10 @@ from datetime import datetime
 def GetCurrentDayFormattedDate():
     currenttimestamp = int(time.time())
     return datetime.fromtimestamp(currenttimestamp).strftime('%Y-%m-%d')
+
+#---------------------------
+#   returns the formatted string of an int value with thousands separator
+#   param: value (int)
+#---------------------------
+def FormatThousandsSeparator(value):
+    return str('{:,}'.format(int(value)).replace(',','.'))
