@@ -94,7 +94,7 @@ def Execute(data):
             Parent.SendStreamMessage(ba_config.ResponseTop10Richest + GetTop10RichestWithData(True))
             return
 
-        if (not pointsAmount.isdigit()):
+        if (pointsAmount and not pointsAmount.isdigit()):
             Parent.SendStreamMessage("Error: Only numbers you silly!")
             return
 
