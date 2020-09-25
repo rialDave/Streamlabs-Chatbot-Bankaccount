@@ -103,7 +103,7 @@ def Execute(data):
                 # check if user has enough points to deposit
                 if (int(userPoints) >= int(pointsAmount)):
                     UpdateDatafile(bankCommand, data)
-                    response = "Successfully deposited " + pointsAmount + " " + ba_config.CurrencyName + "! | Current cash: " + miscLib.FormatThousandsSeparator(Parent.GetPoints(data.User)) + " " + ba_config.CurrencyName + " | Current balance: " + miscLib.FormatThousandsSeparator(GetBalance(data.User)) + " " + ba_config.CurrencyName
+                    response = "Successfully deposited " + miscLib.FormatThousandsSeparator(pointsAmount) + " " + ba_config.CurrencyName + "! | Current cash: " + miscLib.FormatThousandsSeparator(Parent.GetPoints(data.User)) + " " + ba_config.CurrencyName + " | Current balance: " + miscLib.FormatThousandsSeparator(GetBalance(data.User)) + " " + ba_config.CurrencyName
                 else:
                     response = "Error: not enough cash to deposit " + miscLib.FormatThousandsSeparator(pointsAmount) + " " + ba_config.CurrencyName + "! | Current cash: " + str(userPoints)
 
